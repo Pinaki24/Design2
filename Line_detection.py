@@ -2,6 +2,42 @@ import cv2
 import numpy as np
 import math
 
+# Function to calculate the angle relative to the vertical axis and the length of a line
+def calculate_line_attributes(x1, y1, x2, y2):
+    # Calculate dx and dy (differences in x and y)
+    dx = x1 - x2
+    dy = y2 - y1
+
+    if dx == 0:  # Vertical line
+        angle = 90.0  # Perfectly vertical
+    else:
+        m = dy / dx
+        angle = math.degrees(math.atan2(dx, dy))
+        if m > 0:
+            angle = 180 + angle  # Tilt to the left
+        elif m < 0:
+            angle = angle  # Tilt to the right
+
+    # Calculate the length of the line
+    length = math.sqrt(dx ** 2 + dy ** 2)
+
+    return angle, length
+
+# Function to compute x-intersection at a given y_target (middle_y)
+def compute_x_intersection(x1, y1, x2, y2, y_target):
+    if y2 - y1 == 0:
+        return None  # No intersection if the line is horizontal and not at y_target
+    if x2 - x1 != 0:
+        m = (y2 - y1) / (x2 - x1)
+        x_intersection = x1 + (y_target - y1) / m
+    else:
+        x_intersection = x1  # Vertical line
+
+    if min(y1, y2) <= y_target <= max(y1, y2):
+        if min(x1, x2) <= x_intersection <= max(x1, x2):
+            return x_intersection
+    return None
+
 # Initialize the camera capture
 cap = cv2.VideoCapture(0)  # 0 is typically the default camera on your laptop
 
@@ -12,126 +48,80 @@ else:
     while True:
         # Capture frame-by-frame
         ret, frame = cap.read()
-        
         if not ret:
             print("Error: Unable to capture video frame.")
             break
-        
+
         # Get frame dimensions
         height, width, _ = frame.shape
-        
-        # Convert the frame to grayscale
+
+        # Preprocessing
         grayscale_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # Apply Gaussian Blur to reduce noise before edge detection
         blurred_image = cv2.GaussianBlur(grayscale_image, (5, 5), 0)
-
-        # Apply Canny edge detection on the blurred image
         edges = cv2.Canny(blurred_image, 100, 200)
 
-        # Apply the Probabilistic Hough Line Transform to detect lines
-        lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=100, minLineLength=50, maxLineGap=10)
-
-        # Create a copy of the original frame to draw lines on it
+        # Line detection
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=50, maxLineGap=10)
         line_image = np.copy(frame)
 
-        # Calculate middle and top 1/3 y-axis of the frame
+        # Reference points
+        middle_x = width // 2
         middle_y = height // 2
-        look_ahead_y = height // 3  # Define the top 1/3 Y-axis as the "look ahead point"
+        look_ahead_y = height // 3
 
-        # Function to calculate the angle relative to the vertical axis and the length of a line
-        def calculate_line_attributes(x1, y1, x2, y2):
-            # Calculate dx and dy (differences in x and y)
-            dx = x1 - x2
-            dy = y2 - y1
+        # Draw reference markers (Middle Cross)
+        cv2.line(line_image, (middle_x, middle_y - 10), (middle_x, middle_y + 10), (0, 0, 255), 2)
+        cv2.line(line_image, (middle_x - 10, middle_y), (middle_x + 10, middle_y), (0, 0, 255), 2)
 
-            if dx == 0:  # Vertical line
-                angle = 90.0  # Perfectly vertical
-            else:
-                m = dy / dx
-
-                # Calculate the angle relative to the vertical axis
-                angle = math.degrees(math.atan2(dx, dy))  # Relative to the vertical axis
-
-                # Adjust angle to account for direction (positive or negative)
-                if m > 0:
-                    angle = 180 + angle  # Tilt to the left
-                elif m < 0:
-                    angle = angle  # Tilt to the right
-
-            # Calculate the length of the line
-            length = math.sqrt((dx) ** 2 + (dy) ** 2)
-
-            return angle, length
-
-        # Store the attributes of lines near the middle and the "look ahead point" and their average x values
         lines_near_middle = []
-        lines_near_look_ahead_point = []
         x_values_middle = []
-        x_values_look_ahead = []
+        x_intersections = []
 
-        # Draw **all** the lines on the image and calculate attributes
+        # Process detected lines
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
-
-                # Draw the line (for all lines)
-                cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 2)  # Draw all lines in blue
-
-                # Calculate the midpoint of the line
+                # Draw all lines in blue
+                cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 2)
                 midpoint_y = (y1 + y2) // 2
 
-                # Check if the midpoint is close to the middle y-axis of the frame
-                if abs(midpoint_y - middle_y) < 20:  # Threshold of 20 pixels for the middle
-                    # Draw the line (for lines near the middle)
-                    cv2.line(line_image, (x1, y1), (x2, y2), (0, 255, 0), 2)  # Draw middle lines in green
-
-                    # Calculate angle and length
+                if abs(midpoint_y - middle_y) < 50:
+                    # Lines near the middle
+                    cv2.line(line_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     angle, length = calculate_line_attributes(x1, y1, x2, y2)
-
-                    # Store the attributes of the line
                     lines_near_middle.append({'angle': angle, 'length': length})
-
-                    # Calculate and store the average x-coordinate of the line
                     avg_x = (x1 + x2) / 2
+                    distance_to_middle = abs(avg_x - middle_x)
                     x_values_middle.append(avg_x)
 
-                    # Print the attributes for lines near the middle
-                    print(f"Line near middle: Angle = {angle:.2f} degrees, Length = {length:.2f} pixels, Avg X = {avg_x:.2f}")
+                    # Compute x-intersection at middle_y
+                    x_intersection = compute_x_intersection(x1, y1, x2, y2, middle_y)
+                    if x_intersection is not None:
+                        x_intersections.append(x_intersection)
+                    else:
+                        continue  # Skip if there's no valid intersection
 
-                # Check if the midpoint is close to the "look ahead point" (top 1/3 y-axis)
-                elif abs(midpoint_y - look_ahead_y) < 20:  # Threshold of 20 pixels for the look ahead point
-                    # Draw the line (for lines near the "look ahead point")
-                    cv2.line(line_image, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Draw look ahead lines in red
+                    print(f"Line near middle: Angle = {angle:.2f} degrees, Length = {length:.2f} pixels, Distance to middle = {distance_to_middle:.2f} px")
 
-                    # Calculate angle and length
-                    angle, length = calculate_line_attributes(x1, y1, x2, y2)
+        # Calculate and display overall average intersection point
+        if x_intersections:
+            overall_avg_x_intersection = sum(x_intersections) / len(x_intersections)
+            distance_to_middle = abs(overall_avg_x_intersection - middle_x)
+            print(f"Overall average X intersection at middle_y: {overall_avg_x_intersection:.2f}")
+            print(f"Distance between middle cross and detected line: {distance_to_middle:.2f} pixels")
 
-                    # Store the attributes of the line
-                    lines_near_look_ahead_point.append({'angle': angle, 'length': length})
+            # Draw line from middle cross to intersection point
+            cv2.line(line_image, (int(middle_x), int(middle_y)), (int(overall_avg_x_intersection), int(middle_y)), (0, 255, 0), 2)
+            # Optionally, draw a circle at the intersection point
+            cv2.circle(line_image, (int(overall_avg_x_intersection), int(middle_y)), 5, (0, 255, 255), -1)
 
-                    # Calculate and store the average x-coordinate of the line
-                    avg_x = (x1 + x2) / 2
-                    x_values_look_ahead.append(avg_x)
-
-                    # Print the attributes for lines near the look ahead point
-                    print(f"Line near look ahead point: Angle = {angle:.2f} degrees, Length = {length:.2f} pixels, Avg X = {avg_x:.2f}")
-
-        # Calculate the overall average x-value for lines near the middle
-        if x_values_middle:
-            overall_avg_x_middle = sum(x_values_middle) / len(x_values_middle)
-            print(f"Overall average X value of lines near middle: {overall_avg_x_middle:.2f}")
+            # Display this distance on the image
+            cv2.putText(line_image, f"Distance: {distance_to_middle:.2f} px", 
+                        (10, height - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         else:
             print("No lines detected near the middle of the screen.")
 
-        # Calculate the overall average x-value for lines near the "look ahead point"
-        if x_values_look_ahead:
-            overall_avg_x_look_ahead = sum(x_values_look_ahead) / len(x_values_look_ahead)
-            print(f"Overall average X value of lines near look ahead point: {overall_avg_x_look_ahead:.2f}")
-        else:
-            print("No lines detected near the look ahead point of the screen.")
-
-        # Display the processed frame with all lines, lines near the middle, and lines near the look ahead point
+        # Display the processed frame
         cv2.imshow('Hough Lines', line_image)
 
         # Exit if 'q' is pressed
