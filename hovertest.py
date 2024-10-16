@@ -38,8 +38,8 @@ def disable_pre_arm_checks(vehicle):
         print("Pre-arm checks disabled.")
         
         # Disable GPS
-        vehicle.parameters['GPS_TYPE'] = 0
-        print("GPS disabled.")
+        # vehicle.parameters['GPS_TYPE'] = 0
+        # print("GPS disabled.")
         
         # Wait for parameters to take effect
         time.sleep(2)
