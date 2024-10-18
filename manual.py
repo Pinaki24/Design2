@@ -1,23 +1,25 @@
 from dronekit import connect, VehicleMode
-from pymavlink import mavutil
 import time
 import curses
 
 # Replace 'COM3' with your actual COM port
-vehicle = connect('COM3', baud=57600, wait_ready=True)
+vehicle = connect('udp:192.168.4.1:14550', wait_ready=True)
 
-# Function to send velocity commands to the drone
-def send_velocity(velocity_x, velocity_y, velocity_z, yaw_rate):
-    msg = vehicle.message_factory.set_position_target_local_ned_encode(
-        0, 0, 0, mavutil.mavlink.MAV_FRAME_LOCAL_NED,
-        0b0000111111000111,  # Ignore position
-        0, 0, 0,  # Position
-        velocity_x, velocity_y, velocity_z,  # Velocity
-        0, 0, 0,  # Acceleration
-        yaw_rate, 0  # Yaw rate and yaw anglepip
-    )
-    vehicle.send_mavlink(msg)
-    vehicle.flush()
+# Function to change the drone's velocity using DroneKit's commands
+def change_velocity(velocity_x, velocity_y, velocity_z):
+    """
+    This function adjusts the drone's velocity using DroneKit's simple_goto function,
+    which inherently handles the MAVLink message construction and sending.
+    """
+    # Calculate the new target location based on the velocity vectors
+    current_location = vehicle.location.global_relative_frame
+    # North, East, Down coordinates for NED (note: down is positive because NED system)
+    north = velocity_x
+    east = velocity_y
+    down = -velocity_z  # Negative because 'down' needs to be positive in NED
+    # Creating a new location vector to shift to
+    target_location = LocationGlobalRelative(current_location.lat + north/1e5, current_location.lon + east/1e5, current_location.alt + down)
+    vehicle.simple_goto(target_location)
 
 # Function to land the drone
 def initiate_landing():
@@ -30,7 +32,7 @@ def initiate_landing():
 # Main function for manual control
 def manual_control(screen):
     vehicle.mode = VehicleMode("GUIDED")
-    while not vehicle.mode.name == "GUIDED":
+    while vehicle.mode.name != "GUIDED":
         time.sleep(1)
     vehicle.armed = True
     while not vehicle.armed:
@@ -65,7 +67,7 @@ def manual_control(screen):
             initiate_landing()
             break
 
-        send_velocity(velocity_x, velocity_y, velocity_z, yaw_rate)
+        change_velocity(velocity_x, velocity_y, velocity_z)
         time.sleep(0.1)
 
     vehicle.mode = VehicleMode("LOITER")
@@ -73,6 +75,7 @@ def manual_control(screen):
 
 # Start manual control using the curses library to capture key presses
 curses.wrapper(manual_control)
+
 
 def arm_and_takeoff(aTargetAltitude):
     """
