@@ -2,7 +2,7 @@ from dronekit import connect, VehicleMode
 import time
 import curses
 
-# Replace 'COM3' with your actual COM port
+# COnnecting to FC wia WIFI from ESP32
 vehicle = connect('udp:192.168.4.1:14550', wait_ready=True)
 
 # Function to change the drone's velocity using DroneKit's commands
