@@ -37,11 +37,15 @@ To clone the repository:
 ```bash
 git clone https://github.com/Pinaki24/Design2.git
 ```
-
+Installing dependencies
 ```bash
 pip install dronekit
 pip install dronekit-sitl
 ```
+## Installing Python 3.6.8
+
+For **Windows**, download and install Python 3.6.8 from the [official Python website](https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe).
+
 
 # Additional libraries:
 
