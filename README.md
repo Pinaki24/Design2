@@ -20,7 +20,7 @@ This repository contains the source code for implementing key drone functionalit
 - **DroneKit** for flight control
 - **MAVLink** for communication with the flight controller
 - **ESP32 CAM** for vision-based line detection
-- **Optical Flow Sensor** for hover stability
+- **Optical Flow and LIDAR Sensor** for hover stability
 - **PI Control** for motor efficiency
 - **HC-SR04 Ultrasonic sensor for obstacle avoidance
 
@@ -43,10 +43,14 @@ Installing dependencies
 pip install dronekit
 pip install dronekit-sitl
 ```
+
 ## Installing Python 3.6.8
+
 
 For **Windows**, download and install Python 3.6.8 from the [official Python website](https://www.python.org/ftp/python/3.6.8/python-3.6.8-amd64.exe).
 
+Dronekit API requires Python 3.6.8 or Lower,
+for more information on DroneKit, visit the [DroneKit GitHub repository](https://github.com/dronekit/dronekit-python).
 
 # Additional libraries:
 
