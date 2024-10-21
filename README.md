@@ -22,6 +22,7 @@ This repository contains the source code for implementing key drone functionalit
 - **ESP32 CAM** for vision-based line detection
 - **Optical Flow Sensor** for hover stability
 - **PI Control** for motor efficiency
+- **HC-SR04 Ultrasonic sensor for obstacle avoidance
 
 # Design Output folder
 1. Datasheets
