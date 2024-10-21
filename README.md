@@ -1,15 +1,28 @@
-# Design2
+# Welcome to the Design 2 Drone Project by Team 02! 😊
 
-Welcome to the Design 2 Drone project by Team02! This repository contains the source code used to implement key functionalities such as line detection, autonomous takeoff, hovering, and landing. The project also incorporates PI control for efficient motor management.
+This repository contains the source code for implementing key drone functionalities, including:
 
-# Features:  
-Line Detection: Uses camera inputs to detect lines for navigation.  
-PI Control: Provides smooth and efficient motor control during flight.  
-Autonomous Hovering & Landing: Includes automated takeoff, hovering, and landing routines with obstacle avoidance.  
-# Key Files:  
-Line_detection.py: Line detection using camera inputs.  
-PI.py: Proportional-Integral controller for motor control.  
-takeoff_hover_avoid_land.py: Code for autonomous flight, including obstacle avoidance.  
+- **Line Detection**
+- **Autonomous Takeoff**
+- **Hovering**
+- **Landing**
+
+
+## Features
+
+- **Line Detection**: Detects and follows lines using the ESP32 CAM with MAVLink integration.
+- **Autonomous Takeoff**: Enables the drone to take off automatically without manual intervention.
+- **Hovering**: Utilizes an optical flow sensor for stable and controlled hovering.
+- **Landing**: Automated landing sequence initiated after hovering.
+
+## Technology Stack
+
+- **DroneKit** for flight control
+- **MAVLink** for communication with the flight controller
+- **ESP32 CAM** for vision-based line detection
+- **Optical Flow Sensor** for hover stability
+- **PI Control** for motor efficiency
+
 # Design Output folder
 1. Datasheets
 2. Documents
@@ -17,17 +30,13 @@ takeoff_hover_avoid_land.py: Code for autonomous flight, including obstacle avoi
 4. Firmware
 5. 3D Modelling
 
+## Getting Started
 
-# Getting Started
+To clone the repository:
 
+```bash
+git clone https://github.com/Pinaki24/Design2.git
 ```
-Python 3.6.8: Required for running the scripts.
-```
-```
-DroneKit: Required for drone control.
-```
-
-
 
 ```bash
 pip install dronekit
@@ -35,7 +44,6 @@ pip install dronekit-sitl
 ```
 
 # Additional libraries:
-
 
 ```bash
 pip install opencv-python
