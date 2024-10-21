@@ -23,6 +23,7 @@ This repository contains the source code for implementing key drone functionalit
 - **Optical Flow and LIDAR Sensor** for hover stability
 - **PI Control** for motor efficiency
 - **HC-SR04 Ultrasonic sensor for obstacle avoidance
+- ** ESP to Wifi, creates access point for user 
 
 # Design Output folder
 1. Datasheets
